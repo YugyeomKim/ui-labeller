@@ -1,0 +1,26 @@
+{
+  "name": "ui-labeller",
+  "id": "1270558776880504698",
+  "api": "1.0.0",
+  "main": "code.js",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "editorType": [
+    "figma"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  },
+  "menu": [
+    {
+      "name": "Convert",
+      "command": "default"
+    }
+  ],
+  "ui": {
+    "setting": "setting.html",
+    "checking": "checking.html"
+  }
+}

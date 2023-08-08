@@ -1,0 +1,51 @@
+<html>
+<head>
+    <title>Setting</title>
+</head>
+<body>
+    <h1>Setting</h1>
+    <div style="display: flex; flex-direction: column;">
+        <label for="destination">destination</label>
+        <input type="text" name="destination" id="destination">
+    </div>
+    <div style="display: flex; flex-direction: column;">
+        <label for="device">device</label>
+        <input type="text" name="device" id="device">
+    </div>
+    <div style="display: flex; flex-direction: column;">
+        <button id="start-checking-button">Start Checking</button>
+        <button id="convert-without-checking-button">Convert without Checking</button>
+    </div>
+
+    <script>
+        const destination = document.getElementById('destination');
+        const device = document.getElementById('device');
+        const startCheckingButton = document.getElementById('start-checking-button');
+        const convertWithoutCheckingButton = document.getElementById('convert-without-checking-button');
+
+        startCheckingButton.addEventListener('click', () => {
+            if (destination.value === '' || device.value === '') {
+                alert('Please input destination and device');
+                return;
+            }
+            parent.postMessage({ pluginMessage: { 
+                type: "start-checking",
+                destination: destination.value,
+                device: device.value
+            } }, "*");
+        });
+        
+        convertWithoutCheckingButton.addEventListener('click', () => {
+            if (destination.value === '') {
+                alert('Please input destination');
+                return;
+            }
+            parent.postMessage({ pluginMessage: { 
+                type: "convert-without-checking",
+                destination: destination.value,
+                device: device.value
+            } }, "*");
+        });        
+        </script>
+</body>
+</html>

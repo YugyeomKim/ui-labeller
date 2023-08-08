@@ -1,0 +1,24 @@
+<html>
+<head>
+    <title>Checking</title>
+</head>
+<body>
+    <div style="left: 50%; top: 50%; transform: translate(-50%, -50%);">
+        <button id="confirm-button">Confirm</button>
+        <button id="cancel-button">Cancel</button>
+    </div>
+    
+    <script>
+        const confirmButton = document.getElementById('confirm-button');
+        const cancelButton = document.getElementById('cancel-button');
+
+        confirmButton.addEventListener('click', () => {
+            parent.postMessage({ pluginMessage: { type: "convert-after-checking" } }, "*");
+        });
+
+        cancelButton.addEventListener('click', () => {
+            parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
+        });
+    </script>
+</body>
+</html>
