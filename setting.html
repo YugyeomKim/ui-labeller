@@ -1,7 +1,4 @@
 <html>
-<head>
-    <title>Setting</title>
-</head>
 <body>
     <h1>Setting</h1>
     <div style="display: flex; flex-direction: column;">
@@ -45,7 +42,17 @@
                 destination: destination.value,
                 device: device.value
             } }, "*");
-        });        
+        });
+
+        onmessage = (event) => {
+            const message = event.data.pluginMessage;
+            if (message.type === 'set-destination') {
+                destination.value = message.destination;
+            }
+            if (message.type === 'set-device') {
+                device.value = message.device;
+            }
+        };
         </script>
 </body>
 </html>

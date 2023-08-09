@@ -12,25 +12,29 @@ interface TargetWithImage {
   target: Target
 }
 
-const classes = [
-  // "TEXT",
-  // "RECTANGLE",
-  // "LINE",
-  // "ELLIPSE",
-  "ICON",
-  "IMAGE",
-  "BUTTON",
-  "INPUT",
-  "CHECKBOX",
-  "LIST",
-]
+const classes: { [key: string]: string } = {
+  // text: "TEXT",
+  // rectangle: "RECTANGLE",
+  // rectangleImage: "RECTANGLE_IMAGE",
+  // line: "LINE",
+  // ellipse: "ELLIPSE",
+  // ellipseImage: "ELLIPSE_IMAGE",
+  icon: "ICON",
+  image: "IMAGE",
+  iconButton: "ICON_BUTTON",
+  commonButton: "COMMON_BUTTON",
+  input: "INPUT",
+  checkbox: "CHECKBOX",
+  card: "CARD",
+  list: "LIST",
+}
 
 /**
  * Return the list of labels and bboxes of the selected node
  * @param {SceneNode} node
  * @returns {Target}
  */
-function getTargetListFromNode(node: SceneNode): Target {
+function getTargetListFromNode(node: SceneNode, parentX: number = 0, parentY: number = 0): Target {
   let bboxesList: Bbox[] = []
   let labelsList: Label[] = []
 
@@ -42,27 +46,43 @@ function getTargetListFromNode(node: SceneNode): Target {
       labelsList.push(["TEXT"])
       isTarget = true
       break
-      
+
     case "RECTANGLE":
+      if (node.fills !== figma.mixed && node.fills.length > 0) {
+        const fill = node.fills[0]
+        if (fill.type === "IMAGE") {
+          labelsList.push(["IMAGE_RECTANGLE"])
+          isTarget = true
+          break
+        }
+      }
       labelsList.push(["RECTANGLE"])
       isTarget = true
       break
-        
+
     case "LINE":
       labelsList.push(["LINE"])
       isTarget = true
-      break 
-          
+      break
+
     case "ELLIPSE":
+      if (node.fills !== figma.mixed && node.fills.length > 0) {
+        const fill = node.fills[0]
+        if (fill.type === "IMAGE") {
+          labelsList.push(["IMAGE_ELLIPSE"])
+          isTarget = true
+          break
+        }
+      }
       labelsList.push(["ELLIPSE"])
       isTarget = true
-      break  
-            
+      break
+
     default:
-      for (const className of classes) {
-        if (nodeName.toUpperCase().includes(className)) {
-          labelsList.push([className])
-          isTarget = true        
+      for (const className in classes) {
+        if (nodeName.toUpperCase().includes(className.toUpperCase())) {
+          labelsList.push([classes[className]])
+          isTarget = true
           break
         }
       }
@@ -71,25 +91,43 @@ function getTargetListFromNode(node: SceneNode): Target {
 
   if (isTarget) {
     const bbox: Bbox = [
-      node.x,
-      node.y,
-      node.x + node.width,
-      node.y + node.height
+      parentX + node.x,
+      parentY + node.y,
+      parentX + node.x + node.width,
+      parentY + node.y + node.height
     ]
 
     bboxesList.push(bbox)
   }
 
-
-  if (node.type === "GROUP" 
-  || node.type === "FRAME"
-  || node.type === "COMPONENT"
-  || node.type === "INSTANCE") {
+  if (node.type === "GROUP") {
     node.children.forEach((child) => {
-      const {
-        contentBoxes,
-        labels
-      } = getTargetListFromNode(child)
+      const { contentBoxes, labels } = getTargetListFromNode(child, parentX, parentY)
+
+      bboxesList = bboxesList.concat(contentBoxes)
+      labelsList = labelsList.concat(labels)
+    })
+  } else if (
+    node.type === "FRAME"
+    || node.type === "COMPONENT"
+    || node.type === "INSTANCE"
+  ) {
+    node.children.forEach((child) => {
+      let contentBoxes: Bbox[] = []
+      let labels: Label[] = []
+
+      if (
+        node.parent
+        && node.parent.type !== "PAGE"
+      ) {
+        const result = getTargetListFromNode(child, parentX + node.x, parentY + node.y)
+        contentBoxes = result.contentBoxes
+        labels = result.labels
+      } else {
+        const result = getTargetListFromNode(child)
+        contentBoxes = result.contentBoxes
+        labels = result.labels
+      }
 
       bboxesList = bboxesList.concat(contentBoxes)
       labelsList = labelsList.concat(labels)
@@ -110,62 +148,98 @@ function drawTarget(frame: FrameNode, target: Target) {
   newFrame.x = frame.x
   newFrame.y = frame.y
   newFrame.name = frame.name + " (target)"
-  
+  newFrame.fills = [figma.util.solidPaint({ r: 0, g: 0, b: 0, a: 0.1 })]
+
   const { contentBoxes, labels } = target
-  
+
   for (let i = 0; i < contentBoxes.length; i++) {
     const bbox = contentBoxes[i]
     const label = labels[i]
 
     const rect = figma.createRectangle()
+    newFrame.appendChild(rect)
+
     rect.resize(bbox[2] - bbox[0], bbox[3] - bbox[1])
     rect.x = bbox[0]
     rect.y = bbox[1]
-    rect.strokes = [figma.util.solidPaint({r: 1, g: 0, b: 0, a: 1})]
-    rect.fills = [figma.util.solidPaint({r: 0, g: 0, b: 0, a: 0})]
+    rect.strokes = [figma.util.solidPaint({ r: 1, g: 0, b: 0, a: 1 })]
+    rect.fills = [figma.util.solidPaint({ r: 0, g: 0, b: 0, a: 0 })]
     rect.name = label.join(" ")
-    newFrame.appendChild(rect)
 
-    const labelTag = figma.createShapeWithText()
-    labelTag.resize(100, 20)
-    labelTag.x = bbox[0]
-    labelTag.y = bbox[1] - 20
-    labelTag.fills = [figma.util.solidPaint({r: 1, g: 0, b: 0, a: 1})]
-    labelTag.text.fontSize = 12
-    labelTag.text.fontName = { family: "Roboto", style: "Regular" }
-    labelTag.text.characters = label.join(" ")
-    newFrame.appendChild(labelTag)
+    const labelTagBox = figma.createRectangle()
+    const labelTagText = figma.createText()
+    figma.group([rect, labelTagBox, labelTagText], newFrame)
+
+    labelTagBox.resize(50, 10)
+    labelTagBox.x = bbox[0]
+    labelTagBox.y = bbox[1] - 10
+    labelTagBox.topLeftRadius = 5
+    labelTagBox.topRightRadius = 5
+    labelTagBox.fills = [figma.util.solidPaint({ r: 1, g: 0, b: 0, a: 1 })]
+
+    labelTagText.resize(50, 10)
+    labelTagText.x = bbox[0]
+    labelTagText.y = bbox[1] - 10
+    labelTagText.fontSize = 6
+    labelTagText.textAlignHorizontal = "CENTER"
+    labelTagText.textAlignVertical = "CENTER"
+    labelTagText.characters = label.join(" ")
+    labelTagText.fills = [figma.util.solidPaint({ r: 1, g: 1, b: 1, a: 1 })]
   }
 }
 
-async function fetchTargetsAndImages(targetsList: TargetWithImage, destination: string, device: string) {
+/**
+ * fetch the image and the target to the destination
+ * @param target 
+ * @param destination 
+ * @param device 
+ */
+async function fetchTargetsAndImages(target: TargetWithImage, destination: string, device: string) {
   // TODO
 }
+
+figma.loadFontAsync({ family: "Inter", style: "Regular" })
 
 const targetsList: TargetWithImage[] = []
 let destination: string = ""
 let device: string = ""
 
-figma.showUI("setting", { width: 300, height: 300 })
+figma.showUI(__uiFiles__.setting, { width: 300, height: 300 })
+
+figma.clientStorage.getAsync("destination").then((destination) => {
+  if (destination) {
+    figma.ui.postMessage({ type: "set-destination", destination })
+  }
+})
+
+figma.clientStorage.getAsync("device").then((device) => {
+  if (device) {
+    figma.ui.postMessage({ type: "set-device", device })
+  }
+})
 
 figma.ui.onmessage = async (msg) => {
   switch (msg.type) {
     case "start-checking": {
       destination = msg.destination
-      device = msg.device 
+      device = msg.device
+
+      figma.clientStorage.setAsync("destination", destination)
+      figma.clientStorage.setAsync("device", device)
+
       const frames = figma.currentPage.children
 
       frames.forEach((node) => {
         if (node.type === "FRAME") {
           const target = getTargetListFromNode(node)
-      
+
           drawTarget(node, target)
-          
-          targetsList.push({image: node, target: target})
+
+          targetsList.push({ image: node, target: target })
         }
       })
 
-      figma.showUI("checking", { width: 300, height: 300 })
+      figma.showUI(__uiFiles__.checking, { width: 300, height: 300 })
       break
     }
 
@@ -185,17 +259,21 @@ figma.ui.onmessage = async (msg) => {
       figma.closePlugin(`Converted ${successCount} / ${totalNumberOfTargets} targets.`)
       break
     }
-    
+
     case "convert-without-checking": {
       destination = msg.destination
-      device = msg.device 
+      device = msg.device
+
+      figma.clientStorage.setAsync("destination", destination)
+      figma.clientStorage.setAsync("device", device)
+
       const frames = figma.currentPage.children
 
       frames.forEach((node) => {
         if (node.type === "FRAME") {
           const target = getTargetListFromNode(node)
-      
-          targetsList.push({image: node, target: target})
+
+          targetsList.push({ image: node, target: target })
         }
       })
 

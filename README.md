@@ -2,4 +2,4 @@
 
 ### TODO
 1. Checking processed data
-2. Progress bar
+3. Select labeling mode
