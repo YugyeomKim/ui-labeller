@@ -16,11 +16,9 @@ const classes: { [key: string]: string } = {
   // text: "TEXT",
   // rectangle: "RECTANGLE",
   // rectangleImage: "RECTANGLE_IMAGE",
-  // line: "LINE",
   // ellipse: "ELLIPSE",
   // ellipseImage: "ELLIPSE_IMAGE",
   icon: "ICON",
-  image: "IMAGE",
   iconButton: "ICON_BUTTON",
   commonButton: "COMMON_BUTTON",
   input: "INPUT",
@@ -230,7 +228,11 @@ figma.ui.onmessage = async (msg) => {
       const frames = figma.currentPage.children
 
       frames.forEach((node) => {
-        if (node.type === "FRAME") {
+        if (
+          node.type === "FRAME"
+          && !node.name.endsWith("(target)")
+          && !node.name.endsWith("(completed)")
+        ) {
           const target = getTargetListFromNode(node)
 
           drawTarget(node, target)
@@ -250,6 +252,7 @@ figma.ui.onmessage = async (msg) => {
       for (const target of targetsList) {
         try {
           await fetchTargetsAndImages(target, destination, device)
+          target.image.name = target.image.name + " (completed)"
           successCount += 1
         } catch (error) {
           console.log(error)
@@ -270,7 +273,11 @@ figma.ui.onmessage = async (msg) => {
       const frames = figma.currentPage.children
 
       frames.forEach((node) => {
-        if (node.type === "FRAME") {
+        if (
+          node.type === "FRAME"
+          && !node.name.endsWith("(target)")
+          && !node.name.endsWith("(completed)")
+        ) {
           const target = getTargetListFromNode(node)
 
           targetsList.push({ image: node, target: target })
@@ -283,6 +290,7 @@ figma.ui.onmessage = async (msg) => {
       for (const target of targetsList) {
         try {
           await fetchTargetsAndImages(target, destination, device)
+          target.image.name = target.image.name + " (completed)"
           successCount += 1
         } catch (error) {
           console.log(error)

@@ -1,5 +1,5 @@
 # UI-Labeller Plugin
 
 ### TODO
-1. Checking processed data
-3. Select labeling mode
+1. Select labeling mode (Rectangle problem)
+4. Select save mode
