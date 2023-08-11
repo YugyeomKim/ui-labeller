@@ -56,8 +56,6 @@ const classes: { [key: string]: string } = {
  * @returns {Target}
  */
 function getTargetListFromNode(node: SceneNode, parentX: number = 0, parentY: number = 0): Target {
-  console.log(node.name)
-  
   let bboxesList: Bbox[] = []
   let labelsList: Label[] = []
 
@@ -270,6 +268,8 @@ figma.ui.onmessage = async (msg) => {
           && !node.name.endsWith("(target)")
           && !node.name.endsWith("(completed)")
         ) {
+          console.log(node.name);
+          
           const target = getTargetListFromNode(node)
 
           drawTarget(node, target)
@@ -315,6 +315,8 @@ figma.ui.onmessage = async (msg) => {
           && !node.name.endsWith("(target)")
           && !node.name.endsWith("(completed)")
         ) {
+          console.log(node.name);
+          
           const target = getTargetListFromNode(node)
 
           targetsList.push({ image: node, target: target })
