@@ -1,3 +1,6 @@
+figma.skipInvisibleInstanceChildren = true;
+const SERVER = 'http://localhost:3000/download'
+
 type Bbox = [number, number, number, number]
 
 type Label = string[]
@@ -12,19 +15,39 @@ interface TargetWithImage {
   target: Target
 }
 
+const highPriorityClasses: { [key: string]: string } = {
+  statusBar: "STATUS_BAR",
+  homeIndicator: "HOME_INDICATOR",
+  TextButton: "TEXT_BUTTON",
+}
+
 const classes: { [key: string]: string } = {
   // text: "TEXT",
-  // rectangle: "RECTANGLE",
   // rectangleImage: "RECTANGLE_IMAGE",
-  // ellipse: "ELLIPSE",
   // ellipseImage: "ELLIPSE_IMAGE",
-  icon: "ICON",
-  iconButton: "ICON_BUTTON",
+  // rectangle: "RECTANGLE",
+  // ellipse: "ELLIPSE",
+  textField: "TEXT_FIELD",
+  searchField: "SEARCH_FIELD",
   commonButton: "COMMON_BUTTON",
-  input: "INPUT",
-  checkbox: "CHECKBOX",
-  card: "CARD",
+  iconButton: "ICON_BUTTON",
+  icon: "ICON",
+  segmentedButton: "SEGMENTED_BUTTON",
+  switch: "SWITCH",
+  topAppBar: "TOP_APP_BAR",
+  badge: "BADGE",
+  chip: "CHIP",
   list: "LIST",
+  row: "ROW",
+  card: "CARD",
+  carousel: "CAROUSEL",
+  grid: "GRID",
+  tabBar: "TAB_BAR",
+  tab: "TAB",
+  bottomNavigation: "BOTTOM_NAVIGATION",
+  backDrop: "BACK_DROP",
+  banner: "BANNER",
+  modal: "MODAL",
 }
 
 /**
@@ -39,52 +62,45 @@ function getTargetListFromNode(node: SceneNode, parentX: number = 0, parentY: nu
   const nodeName: string = node.name
   let isTarget: boolean = false
 
-  switch (node.type) {
-    case "TEXT":
-      labelsList.push(["TEXT"])
+  for (const className in highPriorityClasses) {
+    if (nodeName.toUpperCase() === className.toUpperCase()) {
+      labelsList.push([highPriorityClasses[className]])
       isTarget = true
       break
-
-    case "RECTANGLE":
-      if (node.fills !== figma.mixed && node.fills.length > 0) {
-        const fill = node.fills[0]
-        if (fill.type === "IMAGE") {
-          labelsList.push(["IMAGE_RECTANGLE"])
-          isTarget = true
-          break
-        }
+    }
+  }
+  
+  if (isTarget) {
+    // For not target yet
+  } else if (node.type === "TEXT") {
+    labelsList.push(["TEXT"])
+    isTarget = true
+  } else if (
+    "fills" in node 
+    && node.fills !== figma.mixed 
+    && node.fills.length > 0
+    && node.fills[0].type === "IMAGE"
+  ) {
+    if (node.type === "ELLIPSE") {
+      labelsList.push(["IMAGE_ELLIPSE"])
+    } else {
+      labelsList.push(["IMAGE_RECTANGLE"])
+    }
+    isTarget = true
+  } else if (node.type === "RECTANGLE") {
+    labelsList.push(["RECTANGLE"])
+    isTarget = true
+  } else if (node.type === "ELLIPSE") {
+    labelsList.push(["ELLIPSE"])
+    isTarget = true
+  } else {
+    for (const className in classes) {
+      if (nodeName.toUpperCase() === className.toUpperCase()) {
+        labelsList.push([classes[className]])
+        isTarget = true
+        break
       }
-      labelsList.push(["RECTANGLE"])
-      isTarget = true
-      break
-
-    case "LINE":
-      labelsList.push(["LINE"])
-      isTarget = true
-      break
-
-    case "ELLIPSE":
-      if (node.fills !== figma.mixed && node.fills.length > 0) {
-        const fill = node.fills[0]
-        if (fill.type === "IMAGE") {
-          labelsList.push(["IMAGE_ELLIPSE"])
-          isTarget = true
-          break
-        }
-      }
-      labelsList.push(["ELLIPSE"])
-      isTarget = true
-      break
-
-    default:
-      for (const className in classes) {
-        if (nodeName.toUpperCase().includes(className.toUpperCase())) {
-          labelsList.push([classes[className]])
-          isTarget = true
-          break
-        }
-      }
-      break
+    }
   }
 
   if (isTarget) {
@@ -187,28 +203,42 @@ function drawTarget(frame: FrameNode, target: Target) {
 }
 
 /**
- * fetch the image and the target to the destination
+ * fetch the image and the target
  * @param target 
- * @param destination 
  * @param device 
  */
-async function fetchTargetsAndImages(target: TargetWithImage, destination: string, device: string) {
-  // TODO
+async function fetchTargetsAndImages(target: TargetWithImage, device: string) {
+  const bytes = await target.image.exportAsync({ format: "PNG" })
+  
+  const body = {
+    pngBlob: Array.from(bytes),
+    jsonData: target.target,
+    fileName: device
+  }
+
+  const response = await fetch(SERVER, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).catch((err) => {
+    throw new Error(err.message);
+  })
+
+  switch (response.status) {
+    case 200:
+      return response.statusText
+    
+    default:
+      throw new Error(`${response.status}: ${response.statusText}`)
+  }
 }
 
 figma.loadFontAsync({ family: "Inter", style: "Regular" })
 
 const targetsList: TargetWithImage[] = []
-let destination: string = ""
 let device: string = ""
-
-figma.showUI(__uiFiles__.setting, { width: 300, height: 300 })
-
-figma.clientStorage.getAsync("destination").then((destination) => {
-  if (destination) {
-    figma.ui.postMessage({ type: "set-destination", destination })
-  }
-})
 
 figma.clientStorage.getAsync("device").then((device) => {
   if (device) {
@@ -216,13 +246,18 @@ figma.clientStorage.getAsync("device").then((device) => {
   }
 })
 
+figma.showUI(__uiFiles__.setting, { width: 300, height: 300 })
+
+
+/**
+ * Get the message from the UI
+ * @param msg blahblah
+ */
 figma.ui.onmessage = async (msg) => {
   switch (msg.type) {
     case "start-checking": {
-      destination = msg.destination
       device = msg.device
 
-      figma.clientStorage.setAsync("destination", destination)
       figma.clientStorage.setAsync("device", device)
 
       const frames = figma.currentPage.children
@@ -251,11 +286,13 @@ figma.ui.onmessage = async (msg) => {
 
       for (const target of targetsList) {
         try {
-          await fetchTargetsAndImages(target, destination, device)
+          const statusText = await fetchTargetsAndImages(target, device)
+          console.log(`${target.image.name}| ${statusText}`)
+          
           target.image.name = target.image.name + " (completed)"
           successCount += 1
         } catch (error) {
-          console.log(error)
+          console.log(`${target.image.name}| ${error}`)
         }
       }
 
@@ -264,10 +301,8 @@ figma.ui.onmessage = async (msg) => {
     }
 
     case "convert-without-checking": {
-      destination = msg.destination
       device = msg.device
 
-      figma.clientStorage.setAsync("destination", destination)
       figma.clientStorage.setAsync("device", device)
 
       const frames = figma.currentPage.children
@@ -289,11 +324,13 @@ figma.ui.onmessage = async (msg) => {
 
       for (const target of targetsList) {
         try {
-          await fetchTargetsAndImages(target, destination, device)
+          const statusText = await fetchTargetsAndImages(target, device)
+          console.log(`${target.image.name}: ${statusText}`)
+
           target.image.name = target.image.name + " (completed)"
           successCount += 1
         } catch (error) {
-          console.log(error)
+          console.log(`${target.image.name}: ${error}`)
         }
       }
 
