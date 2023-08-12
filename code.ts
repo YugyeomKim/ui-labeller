@@ -19,6 +19,7 @@ const highPriorityClasses: { [key: string]: string } = {
   statusBar: "STATUS_BAR",
   homeIndicator: "HOME_INDICATOR",
   TextButton: "TEXT_BUTTON",
+  badge: "BADGE",
 }
 
 const classes: { [key: string]: string } = {
@@ -35,7 +36,6 @@ const classes: { [key: string]: string } = {
   segmentedButton: "SEGMENTED_BUTTON",
   switch: "SWITCH",
   topAppBar: "TOP_APP_BAR",
-  badge: "BADGE",
   chip: "CHIP",
   list: "LIST",
   row: "ROW",
