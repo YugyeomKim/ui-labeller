@@ -56,6 +56,8 @@ const classes: { [key: string]: string } = {
  * @returns {Target}
  */
 function getTargetListFromNode(node: SceneNode, parentX: number = 0, parentY: number = 0): Target {
+  if (node.height === 0 || node.width === 0) return { contentBoxes: [], labels: [] }
+
   let bboxesList: Bbox[] = []
   let labelsList: Label[] = []
 
