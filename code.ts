@@ -48,6 +48,12 @@ const classes: { [key: string]: string } = {
   backDrop: "BACK_DROP",
   banner: "BANNER",
   modal: "MODAL",
+  keyboard: "KEYBOARD",
+  tooltips: "TOOLTIPS",
+  radioButton: "RADIO_BUTTON",
+  datePicker: "DATE_PICKER",
+  timePicker: "TIME_PICKER",
+  QuantityPicker: "QUANTITY_PICKER",
 }
 
 /**
