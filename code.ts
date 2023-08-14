@@ -53,7 +53,8 @@ const classes: { [key: string]: string } = {
   radioButton: "RADIO_BUTTON",
   datePicker: "DATE_PICKER",
   timePicker: "TIME_PICKER",
-  QuantityPicker: "QUANTITY_PICKER",
+  quantityPicker: "QUANTITY_PICKER",
+  other: "OTHER",
 }
 
 /**
@@ -338,7 +339,7 @@ figma.ui.onmessage = async (msg) => {
       for (const target of targetsList) {
         try {
           const statusText = await fetchTargetsAndImages(target, device)
-          console.log(`${target.image.name}: ${statusText}`)
+          console.log(`${target.image.name}| ${statusText}`)
 
           target.image.name = target.image.name + " (completed)"
           successCount += 1
