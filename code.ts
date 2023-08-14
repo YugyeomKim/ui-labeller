@@ -49,7 +49,7 @@ const classes: { [key: string]: string } = {
   banner: "BANNER",
   modal: "MODAL",
   keyboard: "KEYBOARD",
-  tooltips: "TOOLTIPS",
+  tooltip: "TOOLTIP",
   radioButton: "RADIO_BUTTON",
   datePicker: "DATE_PICKER",
   timePicker: "TIME_PICKER",
