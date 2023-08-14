@@ -190,7 +190,8 @@ function drawTarget(frame: FrameNode, target: Target) {
 
     const labelTagBox = figma.createRectangle()
     const labelTagText = figma.createText()
-    figma.group([rect, labelTagBox, labelTagText], newFrame)
+    const labelTag = figma.group([rect, labelTagBox, labelTagText], newFrame)
+    labelTag.name = label.join(" ")
 
     labelTagBox.resize(50, 10)
     labelTagBox.x = bbox[0]
