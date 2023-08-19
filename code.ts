@@ -24,8 +24,8 @@ const highPriorityClasses: { [key: string]: string } = {
 
 const classes: { [key: string]: string } = {
   // text: "TEXT",
-  // rectangleImage: "RECTANGLE_IMAGE",
-  // ellipseImage: "ELLIPSE_IMAGE",
+  // imageRectangle: "IMAGE_RECTANGLE",
+  // imageEllipse: "IMAGE_ELLIPSE",
   // rectangle: "RECTANGLE",
   // ellipse: "ELLIPSE",
   textField: "TEXT_FIELD",
