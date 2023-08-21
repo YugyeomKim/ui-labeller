@@ -245,19 +245,51 @@ async function fetchTargetsAndImages(target: TargetWithImage, device: string) {
   }
 }
 
-figma.loadFontAsync({ family: "Inter", style: "Regular" })
+function crawlComponents(node: SceneNode, selectedClasses: string[]) {
+  const crawledComponents: SceneNode[] = []
+  
+  for (const selected of selectedClasses) {
+    if (node.name.toUpperCase() === selected.toUpperCase()) {
+      crawledComponents.push(node)
+    }
+  }
+  
+  if (
+    node.type === "GROUP"
+    || node.type === "FRAME"
+    || node.type === "COMPONENT"
+    || node.type === "INSTANCE"  
+  ) {
+    node.children.forEach((child) => {
+      const crawled = crawlComponents(child, selectedClasses)
+      
+      crawledComponents.push(...crawled)
+    })
+  }
+  return crawledComponents
+}
 
+
+if (figma.command === "convert") {
+  figma.showUI(__uiFiles__.setting, { width: 300, height: 300 })
+  
+  figma.clientStorage.getAsync("device").then((device) => {
+    if (device) {
+      figma.ui.postMessage({ type: "set-device", device })
+    }
+  })
+} else if (figma.command === "loadToSyntheticPallete") {
+  figma.showUI(__uiFiles__.loadToSyntheticPallete, { width: 400, height: 400 })
+  
+  const classesList = [...Object.keys(highPriorityClasses), ...Object.keys(classes)]
+  figma.ui.postMessage({ type: "set-classes", classesList })
+}
+
+
+figma.loadFontAsync({ family: "Inter", style: "Regular" })
+  
 const targetsList: TargetWithImage[] = []
 let device: string = ""
-
-figma.clientStorage.getAsync("device").then((device) => {
-  if (device) {
-    figma.ui.postMessage({ type: "set-device", device })
-  }
-})
-
-figma.showUI(__uiFiles__.setting, { width: 300, height: 300 })
-
 
 /**
  * Get the message from the UI
@@ -352,6 +384,120 @@ figma.ui.onmessage = async (msg) => {
       break
     }
 
+    case "load-to-synthetic-pallete": {
+      let selectedClasses: string[] = msg.selectedClasses
+      
+      if (selectedClasses[0] === "all") {
+        selectedClasses = [...Object.keys(highPriorityClasses), ...Object.keys(classes)]  
+      }
+      
+      // crawl components
+      const crawledComponentsList: SceneNode[] = []
+      const crawledFramesList: FrameNode[] = []
+      figma.currentPage.children.forEach((node) => {
+        if (
+          node.type === "FRAME"
+          && node.name.endsWith("(completed)")
+          && !node.name.startsWith("✅")
+        ) {
+          console.log(node.name);
+          
+          const crawledComponents = crawlComponents(node, selectedClasses)
+          crawledComponentsList.push(...crawledComponents)
+          crawledFramesList.push(node)
+        }
+      })
+
+      // create synthetic pallete if not exist
+      let isSyntheticPalleteExist = false
+      for (const node of figma.root.children) {
+        if (node.name === "Synthetic Pallete") {
+          figma.currentPage = node
+          isSyntheticPalleteExist = true
+          break
+        }
+      }
+
+      if (!isSyntheticPalleteExist) {
+        const newPage = figma.createPage()
+        newPage.name = "Synthetic Pallete"
+        figma.currentPage = newPage
+      }
+
+      // create sections if not exist
+      const sections: {[key: string]: SectionNode} = {}
+      let sectionX = 0
+      for (const selected of selectedClasses) {
+        let isSectionExist = false
+        for (const node of figma.currentPage.children) {
+          if (
+            node.type === "SECTION"
+            && node.name.startsWith(`${selected} from labeled data`)
+          ) {
+            sections[selected.toUpperCase()] = node
+            isSectionExist = true
+            break
+          }
+        }
+
+        if (!isSectionExist) {
+          const sectionWidth = 5000
+          const sectionHeight = 5000
+
+          const newSection = figma.createSection()
+          newSection.name = `${selected} from labeled data 0,0,0`
+          newSection.resizeWithoutConstraints(sectionWidth, sectionHeight)
+          newSection.fills = [figma.util.solidPaint({ r: 0.9, g: 0.9, b: 0.9, a: 1 })]
+          newSection.x = sectionX % ((sectionWidth + 100) * 6)
+          newSection.y = Math.floor(sectionX / ((sectionWidth + 100) * 6)) * (sectionHeight + 100)
+
+          sectionX += sectionHeight + 100
+
+          sections[selected.toUpperCase()] = newSection
+        }
+      }
+
+      const totalNumberOfCrawled = crawledComponentsList.length
+      let successCount = 0
+      
+      for (const crawled of crawledComponentsList) {
+        const newComponent = crawled.clone()
+        const crawledName = newComponent.name.toUpperCase()
+        sections[crawledName].appendChild(newComponent)
+        
+        const coord = sections[crawledName].name.split(" ").slice(-1)[0]
+        let coordX = parseInt(coord.split(",")[0])
+        let coordY = parseInt(coord.split(",")[1])
+        let maxCoordY = parseInt(coord.split(",")[2])
+        
+        newComponent.x = coordX
+        newComponent.y = coordY
+
+        if (coordY + newComponent.height > maxCoordY) {
+          maxCoordY = coordY + newComponent.height
+        }
+
+        coordX += newComponent.width + 20
+        if (coordX > sections[crawledName].width) {
+          coordX = 0
+          coordY = maxCoordY + 20
+        }
+        
+        sections[crawledName].name = `${sections[crawledName].name.split(" ").slice(0, -1)} ${coordX},${coordY},${maxCoordY}`
+
+        console.log(`${crawledName} is loaded to ${sections[crawledName].name}`);
+        
+        successCount += 1
+      }
+
+      // crawledFramesList.forEach((node) => {
+      //   node.name = "✅ " + node.name
+      // })
+
+      figma.closePlugin(`Crawled ${successCount} / ${totalNumberOfCrawled} components.`)
+      break
+    }
+    
     default:
       figma.closePlugin("Cancelled. Please remove the Checking frames.")
   }

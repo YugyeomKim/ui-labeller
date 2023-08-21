@@ -1,0 +1,79 @@
+<html>
+
+<head>
+    <style>
+        #checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        #checkboxes label {
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <p>
+        Load selected classes into the Synthetic Pallete from.<br>
+        Only elements from COMPLETED images are loaded.<br>
+        If you select "All", all classes will be loaded.
+    </p>
+
+    <div id="checkboxes">
+        <span>
+            <label><input type="checkbox" name="all" id="all">all</label>
+        </span>
+    </div>
+    <br>
+    <button id="load">Load</button>
+
+    <script>
+        document.getElementById("load").onclick = () => {
+            const checkboxes = document.querySelectorAll("#checkboxes input[type='checkbox']");
+            let selectedTexts = [];
+            checkboxes.forEach((checkbox) => {
+                if (checkbox.checked) {
+                    selectedTexts.push(checkbox.parentNode.textContent);
+                }
+            });
+
+            if (selectedTexts.length === 0) {
+                alert("Please select at least one class");
+                return;
+            }
+
+            if (selectedTexts[0] === 'all') {
+                selectedTexts = ['all'];
+            }
+
+            parent.postMessage({
+                pluginMessage: {
+                    type: "load-to-synthetic-pallete",
+                    selectedClasses: selectedTexts
+                }
+            }, "*");
+        };
+
+        onmessage = (event) => {
+            const message = event.data.pluginMessage;
+            if (message.type === "set-classes") {
+                const classesList = message.classesList;
+                const checkboxes = document.getElementById("checkboxes");
+                // checkboxes.innerHTML = "";
+                classesList.forEach((item) => {
+                    const span = document.createElement("span");
+                    const label = document.createElement("label");
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    label.appendChild(checkbox);
+                    label.appendChild(document.createTextNode(item));
+                    span.appendChild(label);
+                    checkboxes.appendChild(span);
+                });
+            }
+        };
+    </script>
+</body>
+
+</html>

@@ -19,11 +19,16 @@
   "menu": [
     {
       "name": "Convert",
-      "command": "default"
+      "command": "convert"
+    },
+    {
+      "name": "Load to Synthetic Pallete",
+      "command": "loadToSyntheticPallete"
     }
   ],
   "ui": {
     "setting": "setting.html",
-    "checking": "checking.html"
+    "checking": "checking.html",
+    "loadToSyntheticPallete": "load-to-synthetic-pallete.html"
   }
 }
