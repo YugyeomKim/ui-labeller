@@ -17,8 +17,21 @@
     <p>
         Load selected classes into the Synthetic Pallete from.<br>
         Only elements from COMPLETED images are loaded.<br>
-        If you select "All", all classes will be loaded.
+        If you select "All", all classes will be loaded.<br>
+        Enter height and width for new created section in pixel.<br>
     </p>
+
+    <div>
+        <label>
+            height
+            <input type="text" name="height" id="height" value="5000">
+        </label>
+        <label>
+            width
+            <input type="text" name="width" id="width" value="5000">
+        </label>
+    </div>
+    <br>
 
     <div id="checkboxes">
         <span>
@@ -29,7 +42,15 @@
     <button id="load">Load</button>
 
     <script>
+        const height = document.getElementById("height");
+        const width = document.getElementById("width");
+
         document.getElementById("load").onclick = () => {
+            if (isNaN(height.value) || isNaN(width.value)) {
+                alert("Please enter valid height and width.");
+                return;
+            }
+
             const checkboxes = document.querySelectorAll("#checkboxes input[type='checkbox']");
             let selectedTexts = [];
             checkboxes.forEach((checkbox) => {
@@ -46,11 +67,13 @@
             if (selectedTexts[0] === 'all') {
                 selectedTexts = ['all'];
             }
-
+            
             parent.postMessage({
                 pluginMessage: {
                     type: "load-to-synthetic-pallete",
-                    selectedClasses: selectedTexts
+                    selectedClasses: selectedTexts,
+                    height: height.value,
+                    width: width.value
                 }
             }, "*");
         };

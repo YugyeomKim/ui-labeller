@@ -441,8 +441,8 @@ figma.ui.onmessage = async (msg) => {
         }
 
         if (!isSectionExist) {
-          const sectionWidth = 5000
-          const sectionHeight = 5000
+          const sectionWidth = msg.width
+          const sectionHeight = msg.height
 
           const newSection = figma.createSection()
           newSection.name = `${selected} from labeled data 0,0,0`
