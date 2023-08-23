@@ -57,6 +57,7 @@ const classes: { [key: string]: string } = {
   datePicker: "DATE_PICKER",
   timePicker: "TIME_PICKER",
   quantityPicker: "QUANTITY_PICKER",
+  bottomAppBar: "BOTTOM_APP_BAR",
   other: "OTHER",
 }
 
