@@ -483,7 +483,7 @@ figma.ui.onmessage = async (msg) => {
           coordY = maxCoordY + 20
         }
         
-        sections[crawledName].name = `${sections[crawledName].name.split(" ").slice(0, -1)} ${coordX},${coordY},${maxCoordY}`
+        sections[crawledName].name = `${sections[crawledName].name.split(" ").slice(0, -1).join(" ")} ${coordX},${coordY},${maxCoordY}`
 
         console.log(`${crawledName} is loaded to ${sections[crawledName].name}`);
         
