@@ -24,6 +24,10 @@
     {
       "name": "Load to Synthetic Pallete",
       "command": "loadToSyntheticPallete"
+    },
+    {
+      "name": "Revert Completed Tags",
+      "command": "revertCompletedTags"
     }
   ],
   "ui": {

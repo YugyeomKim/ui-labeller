@@ -287,6 +287,15 @@ if (figma.command === "convert") {
   
   const classesList = [...Object.keys(highPriorityClasses), ...Object.keys(classes)]
   figma.ui.postMessage({ type: "set-classes", classesList })
+} else if (figma.command === "revertCompletedTags") {
+  figma.currentPage.children.forEach((child) => {
+    if (child.type === "FRAME") {
+      child.name = child.name.replace(" (completed)", "")
+      console.log(child.name, "to", child.name.replace(" (completed)", ""));
+    }
+  })
+
+  figma.closePlugin("Reverted completed tags.")
 }
 
 
