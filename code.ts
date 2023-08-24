@@ -291,7 +291,7 @@ if (figma.command === "convert") {
   figma.currentPage.children.forEach((child) => {
     if (child.type === "FRAME") {
       child.name = child.name.replace(" (completed)", "")
-      console.log(child.name, "to", child.name.replace(" (completed)", ""));
+      console.log(child.name);
     }
   })
 
