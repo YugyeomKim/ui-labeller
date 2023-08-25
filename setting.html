@@ -9,6 +9,17 @@
         <input type="text" name="device" id="device" placeholder="mobile">
     </div>
 
+    <br>
+
+    <div>
+        <label>
+            <input type="checkbox" name="training" id="training">
+            only for training
+        </label>
+    </div>
+
+    <br>
+
     <div style="display: flex; flex-direction: column;">
         <button id="start-checking-button">Start Checking</button>
         <button id="convert-without-checking-button">Convert without Checking</button>
@@ -18,6 +29,7 @@
         const device = document.getElementById('device');
         const startCheckingButton = document.getElementById('start-checking-button');
         const convertWithoutCheckingButton = document.getElementById('convert-without-checking-button');
+        const training = document.getElementById('training');
 
         startCheckingButton.addEventListener('click', () => {
             if ( device.value === '') {
@@ -27,16 +39,22 @@
             parent.postMessage({
                 pluginMessage: {
                     type: "start-checking",
-                    device: device.value
+                    device: device.value,
+                    training: training.checked
                 }
             }, "*");
         });
 
         convertWithoutCheckingButton.addEventListener('click', () => {
+            if ( device.value === '') {
+                alert('Please input device');
+                return;
+            }
             parent.postMessage({
                 pluginMessage: {
                     type: "convert-without-checking",
-                    device: device.value
+                    device: device.value,
+                    training: training.checked
                 }
             }, "*");
         });

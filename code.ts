@@ -1,5 +1,6 @@
 figma.skipInvisibleInstanceChildren = true;
-const SERVER = 'http://localhost:3000/download'
+const SERVER = 'http://localhost:3000/download?training=false'
+const SERVER_TRAINING = 'http://localhost:3000/download?training=true'
 
 type Bbox = [number, number, number, number]
 
@@ -221,7 +222,7 @@ function drawTarget(frame: FrameNode, target: Target) {
  * @param target 
  * @param device 
  */
-async function fetchTargetsAndImages(target: TargetWithImage, device: string) {
+async function fetchTargetsAndImages(target: TargetWithImage, device: string, training: boolean) {
   const bytes = await target.image.exportAsync({ format: "PNG" })
   
   const body = {
@@ -230,7 +231,8 @@ async function fetchTargetsAndImages(target: TargetWithImage, device: string) {
     fileName: device
   }
 
-  const response = await fetch(SERVER, {
+  const server = training ? SERVER_TRAINING : SERVER
+  const response = await fetch(server, {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {
@@ -303,6 +305,7 @@ figma.loadFontAsync({ family: "Inter", style: "Regular" })
   
 const targetsList: TargetWithImage[] = []
 let device: string = ""
+let training: boolean = false
 
 /**
  * Get the message from the UI
@@ -312,6 +315,7 @@ figma.ui.onmessage = async (msg) => {
   switch (msg.type) {
     case "start-checking": {
       device = msg.device
+      training = msg.training
 
       figma.clientStorage.setAsync("device", device)
 
@@ -338,12 +342,14 @@ figma.ui.onmessage = async (msg) => {
     }
 
     case "convert-after-checking": {
+      console.log(msg.training);
+      
       const totalNumberOfTargets = targetsList.length
       let successCount = 0
 
       for (const target of targetsList) {
         try {
-          const statusText = await fetchTargetsAndImages(target, device)
+          const statusText = await fetchTargetsAndImages(target, device, training)
           console.log(`${target.image.name}| ${statusText}`)
           
           target.image.name = target.image.name + " (completed)"
@@ -359,6 +365,7 @@ figma.ui.onmessage = async (msg) => {
 
     case "convert-without-checking": {
       device = msg.device
+      training = msg.training
 
       figma.clientStorage.setAsync("device", device)
 
@@ -383,7 +390,7 @@ figma.ui.onmessage = async (msg) => {
 
       for (const target of targetsList) {
         try {
-          const statusText = await fetchTargetsAndImages(target, device)
+          const statusText = await fetchTargetsAndImages(target, device, training)
           console.log(`${target.image.name}| ${statusText}`)
 
           target.image.name = target.image.name + " (completed)"
